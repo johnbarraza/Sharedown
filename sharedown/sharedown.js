@@ -19,7 +19,7 @@
 const sharedownApi = window.sharedown;
 
 const globalSettings = {
-    _version: 18, // internal
+    _version: 19, // internal
     outputPath: '',
     downloader: 'yt-dlp',
     ytdlpTmpOut: '',
@@ -37,13 +37,16 @@ const globalSettings = {
     keepBrowserOpen: false,
     ytdlpRateLimit: 0,
     ytdlpRateLimitU: 'm',
-    staticLogo: false
+    staticLogo: false,
+    dateInFileName: false,
+    keepUserdataFold: false
 };
 
 const resources = {
     downQueObj: new downloadQue(),
     downloading: null,
     downloadingFPath: '',
+    importedURLsMeta: new Map(), // url -> {created, lastModf}, filled by import from folder
     template: null,
     addVideoURLsList: null,
     addURLsModalInstance: null,
@@ -131,10 +134,15 @@ function addVideoURLs() {
     if (urls === '')
         return;
 
-    const urlsList = urls.split(/\r?\n/);
+    const urlsList = urls.split(/\r?\n/).map(u => u.trim()).filter(u => u !== '');
+    const queuedKeys = new Set();
     const invalid = [];
+    const duplicated = [];
 
     toggleLoadingScr();
+
+    for (const n of resources.downQueElm.querySelectorAll('.copy-btn'))
+        queuedKeys.add(Utils.getVideoKey(n.getAttribute('data-vurl')));
 
     for (const url of urlsList) {
         const _url = url.replaceAll('#', '%23');
@@ -144,11 +152,24 @@ function addVideoURLs() {
             continue;
         }
 
-        const vid = new video(Utils.setAsWebPlayerURL(_url));
+        const key = Utils.getVideoKey(_url);
 
+        if (queuedKeys.has(key)) {
+            duplicated.push(Utils.getVideoFileName(_url));
+            continue;
+        }
+
+        const vid = new video(Utils.setAsWebPlayerURL(_url), null, resources.importedURLsMeta.get(url) ?? null);
+
+        queuedKeys.add(key);
         addVideoToUI(vid);
         resources.downQueObj.addVideo(vid);
     }
+
+    resources.importedURLsMeta.clear();
+
+    if (duplicated.length > 0)
+        sharedownApi.showMessage(messageBoxType.Info, `${SharedownMessage.EDuplicatedURLsInAddList}\n\n${duplicated.join('\n')}`, 'Sharedown');
 
     if (invalid.length > 0) {
         resources.addVideoURLsList.value = invalid.join('\n');
@@ -194,8 +215,10 @@ async function importURLsFromFolder() {
         return;
     }
 
-    for (const url of urlList)
-        resources.addVideoURLsList.value += `${url}\n`;
+    for (const v of urlList) {
+        resources.importedURLsMeta.set(v.url, {created: v.created, lastModf: v.lastModf});
+        resources.addVideoURLsList.value += `${v.url}\n`;
+    }
 
     resources.importURLsFoldList.value = '';
 
@@ -220,8 +243,8 @@ function addVideoToUI(vid) {
     const children = resources.downQueElm.children;
     let firstComplete = null;
 
-    span.textContent = vid.url;
-    span.setAttribute('title', vid.url);
+    span.textContent = Utils.getVideoLabel(vid.url, vid.meta);
+    span.setAttribute('title', Utils.getVideoPath(vid.url));
     copyURLBtn.setAttribute('data-vurl', vid.url);
     progBar.addEventListener('click', e => toggleDownloadStats(e.currentTarget.querySelector('span')));
     node.querySelector('.input-group').setAttribute('data-video-id', vid.id);
@@ -359,6 +382,7 @@ async function loadGlobalSettings() {
     resources.globalSetModal.querySelector('#directn').value = globalSettings.directN;
     resources.globalSetModal.querySelector('#keytar').checked = globalSettings.useKeytar;
     resources.globalSetModal.querySelector('#chuserdata').checked = globalSettings.userdataFold;
+    resources.globalSetModal.querySelector('#keepuserdata').checked = globalSettings.keepUserdataFold;
     resources.globalSetModal.querySelector('#autosavestate').checked = globalSettings.autoSaveState;
     resources.globalSetModal.querySelector('#ppttmout').value = globalSettings.timeout;
     resources.globalSetModal.querySelector('#shlogs').value = globalSettings.logging ? '1':'0';
@@ -366,6 +390,7 @@ async function loadGlobalSettings() {
     resources.globalSetModal.querySelector('#cuschromep').value = globalSettings.customChromePath;
     resources.globalSetModal.querySelector('#keepbrowopen').checked = globalSettings.keepBrowserOpen;
     resources.globalSetModal.querySelector('#staticlogo').checked = globalSettings.staticLogo;
+    resources.globalSetModal.querySelector('#dateinfname').checked = globalSettings.dateInFileName;
 
     if (globalSettings.userdataFold || globalSettings.keepBrowserOpen)
         UIUtils.disableAutoLoginOptionsForAny(true);
@@ -387,6 +412,7 @@ async function saveGlobalSettings() {
     globalSettings.ytdlpTmpOut = resources.globalSetModal.querySelector('#ytdlptmpdp').value;
     globalSettings.useKeytar = resources.globalSetModal.querySelector('#keytar').checked;
     globalSettings.userdataFold = resources.globalSetModal.querySelector('#chuserdata').checked;
+    globalSettings.keepUserdataFold = resources.globalSetModal.querySelector('#keepuserdata').checked;
     globalSettings.autoSaveState = resources.globalSetModal.querySelector('#autosavestate').checked;
     globalSettings.loginModule = resources.globalSetModal.querySelector('#loginmodlist').value;
     globalSettings.retryOnFail = resources.globalSetModal.querySelector('#retryonfail').checked;
@@ -401,6 +427,7 @@ async function saveGlobalSettings() {
     globalSettings.customChromePath = resources.globalSetModal.querySelector('#cuschromep').value;
     globalSettings.keepBrowserOpen = resources.globalSetModal.querySelector('#keepbrowopen').checked;
     globalSettings.staticLogo = resources.globalSetModal.querySelector('#staticlogo').checked;
+    globalSettings.dateInFileName = resources.globalSetModal.querySelector('#dateinfname').checked;
 
     shlogsInpt.value = globalSettings.logging ? '1' : '0';
 
@@ -436,6 +463,7 @@ function importAppSettings() {
     globalSettings.ytdlpTmpOut = data.ytdlpTmpOut ?? '';
     globalSettings.useKeytar = data.useKeytar ?? false;
     globalSettings.userdataFold = !globalSettings.useKeytar && (data.userdataFold ?? false);
+    globalSettings.keepUserdataFold = data.keepUserdataFold ?? false;
     globalSettings.autoSaveState = data.autoSaveState ?? true;
     globalSettings.loginModule = !globalSettings.userdataFold && !globalSettings.keepBrowserOpen ? (data.loginModule ?? 0) : 0;
     globalSettings.retryOnFail = data.retryOnFail ?? false;
@@ -450,6 +478,7 @@ function importAppSettings() {
     globalSettings.customChromePath = data.customChromePath ?? '';
     globalSettings.keepBrowserOpen = !globalSettings.useKeytar && (data.keepBrowserOpen ?? false);
     globalSettings.staticLogo = data.staticLogo ?? false;
+    globalSettings.dateInFileName = data.dateInFileName ?? false;
 
     if (data['_version'] < globalSettings['_version']) {
         sharedownApi.upgradeForSettingsUpgrade(data['_version']);
@@ -522,6 +551,13 @@ async function downloadVideo(videoElem) {
             vdata.t = 'sharedownVideo' + sharedownApi.genID();
 
             sharedownApi.writeLog(`downloadVideo: video has empty title!? new title: ${vdata.t}`);
+        }
+
+        if (curSettings.dateInFileName) {
+            const datePrefix = Utils.getVideoDatePrefix(resources.downloading.url, resources.downloading.meta);
+
+            if (datePrefix !== '')
+                vdata.t = `${datePrefix} - ${vdata.t}`;
         }
 
         // generate output file path (apply user settings, if any)
@@ -601,7 +637,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     initResources();
     UIUtils.init(resources.globalSetModal);
-    sharedownApi.deleteUserdataFold(); // if for some reasons the quit event failed, delete it now
 
     if (!sharedownApi.hasFFmpeg()) {
         sharedownApi.showMessage(messageBoxType.Error, SharedownMessage.EFFmpegNotFound, SharedownMessage.EGeneric);
@@ -628,6 +663,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     UIUtils.initLoginModuleSelect();
     importAppSettings();
     importAppState();
+
+    if (!globalSettings.keepUserdataFold)
+        sharedownApi.deleteUserdataFold(); // if for some reasons the quit event failed, delete it now
+
     await loadGlobalSettings();
     updateStartButtonState();
 
@@ -747,7 +786,9 @@ window.addEventListener('DownloadSuccess', () => {
 
 window.addEventListener('beforeunload', () => {
     sharedownApi.flushAndCloseLogs();
-    sharedownApi.deleteUserdataFold();
+
+    if (!globalSettings.keepUserdataFold)
+        sharedownApi.deleteUserdataFold();
 });
 
 window.addEventListener('appmenu', (e) => {

@@ -27,6 +27,7 @@ const SharedownMessage = (() => {
         EImportAppState: 'Could not import app state from disk',
         EDownloadFail: 'Download failed',
         EInvalidURLsInAddList: 'Some URLs were invalid and they were skipped',
+        EDuplicatedURLsInAddList: 'These videos are already in the download queue and they were skipped:',
         EImportFromFolderCanceled: 'Import from folder canceled!',
         EInvalidID: 'Invalid video ID',
         EGeneric: 'Sharedown error',
@@ -170,6 +171,70 @@ const Utils = (() => {
 
     util.getYtdlpNVal = n => {
         return Math.min(Math.max(parseInt(n, 10), 1), 5);
+    }
+
+    // server relative path of the video, works for /:v:/r/..., /sites/... and ?id=... urls
+    util.getVideoPath = url => {
+        try {
+            const urlObj = new URL(url.replaceAll('#', '%23'));
+            const id = urlObj.searchParams.get('id');
+
+            if (id !== null && id.includes('/'))
+                return id;
+
+            return decodeURIComponent(urlObj.pathname.replace(/^\/:[a-z]:\/[a-z]\//, '/'));
+
+        } catch (e) {
+            return url;
+        }
+    }
+
+    util.getVideoKey = url => {
+        return util.getVideoPath(url).normalize().toLowerCase();
+    }
+
+    util.getVideoFileName = url => {
+        return util.getVideoPath(url).split('/').filter(s => s !== '').at(-1) ?? url;
+    }
+
+    // Teams recordings: name-20260812_124031UTC-Meeting Recording.mp4
+    util.getVideoDate = (url, meta) => {
+        const m = util.getVideoFileName(url).match(/(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})UTC/);
+
+        if (m !== null)
+            return new Date(Date.UTC(m[1], m[2] - 1, m[3], m[4], m[5], m[6]));
+        else if (meta?.created)
+            return new Date(meta.created);
+
+        return null;
+    }
+
+    util.formatVideoDate = date => {
+        // month as text: 12/08 is ambiguous between dd/mm and mm/dd
+        const day = date.toLocaleDateString(undefined, {weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'});
+        const time = date.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
+
+        return `${day} ${time}`;
+    }
+
+    util.getVideoLabel = (url, meta) => {
+        const date = util.getVideoDate(url, meta);
+        const name = util.getVideoFileName(url);
+
+        return date === null ? name : `${util.formatVideoDate(date)} · ${name}`;
+    }
+
+    // 2026-08-12 miércoles
+    util.getVideoDatePrefix = (url, meta) => {
+        const date = util.getVideoDate(url, meta);
+
+        if (date === null)
+            return '';
+
+        const pad = n => n.toString().padStart(2, '0');
+        const weekday = date.toLocaleDateString(undefined, {weekday: 'long'});
+
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${weekday}`;
     }
 
     Object.freeze(util);

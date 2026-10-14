@@ -210,7 +210,7 @@ const SharedownAPI = (() => {
 
         while (!playerHandle) {
             try {
-                const isPuppyDead = _puppyBrowser === null || !_puppyBrowser.isConnected();
+                const isPuppyDead = _puppyBrowser === null || !_puppyBrowser.connected;
 
                 if (isPuppyDead || (Date.now() - start) >= maxTime) {
                     api.writeLog(`_waitForVideoPlayer: stopped, dead: ${isPuppyDead}`);
@@ -674,9 +674,15 @@ const SharedownAPI = (() => {
         _puppyBrowser = null;
     }
 
+    // Teams recordings have the meeting start time in the file name: name-20260812_124031UTC-Meeting Recording.mp4
+    function _getClassTime(vObj) {
+        const m = vObj.url.match(/(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})UTC/);
+
+        return m === null ? vObj.created : Date.UTC(m[1], m[2] - 1, m[3], m[4], m[5], m[6]);
+    }
+
     function _sortURLsFromFolder(vURLsList, sortType) {
         const sorted = [];
-        const ret = [];
 
         if (sortType !== 0) {
             for (const vObj of vURLsList) {
@@ -685,7 +691,8 @@ const SharedownAPI = (() => {
                 for (const sObj of sorted) {
                     if ((sortType === 1 && vObj.created < sObj.created) ||
                             (sortType === 2 && vObj.lastModf < sObj.lastModf) ||
-                            (sortType === 3 && vObj.url.normalize() < sObj.url.normalize()))
+                            (sortType === 3 && vObj.url.normalize() < sObj.url.normalize()) ||
+                            (sortType === 4 && _getClassTime(vObj) < _getClassTime(sObj)))
                         break;
 
                     ++idx;
@@ -697,10 +704,7 @@ const SharedownAPI = (() => {
             sorted.splice(0, sorted.length, ...vURLsList);
         }
 
-        for (const svObj of sorted)
-            ret.push(svObj.url);
-
-        return ret;
+        return sorted;
     }
 
     api.hasFFmpeg = () => {

@@ -83,7 +83,7 @@ class downloadQue {
                 const vdata = JSON.parse(v);
 
                 if (vdata && vdata.hasOwnProperty('url') && vdata.hasOwnProperty('settings'))
-                    this.#list.push(new video(vdata.url, vdata.settings));
+                    this.#list.push(new video(vdata.url, vdata.settings, vdata.meta ?? null));
             }
 
             return true;

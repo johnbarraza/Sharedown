@@ -24,13 +24,22 @@ class video {
         saveas: '',
         outputPath: ''
     };
+    meta = {
+        created: 0,
+        lastModf: 0
+    };
 
-    constructor(url, settings = null) {
+    constructor(url, settings = null, meta = null) {
         this.url = url;
 
         if (settings !== null) {
             this.settings.saveas = settings.saveas ?? '';
             this.settings.outputPath = settings.outputPath ?? ''
+        }
+
+        if (meta !== null) {
+            this.meta.created = meta.created ?? 0;
+            this.meta.lastModf = meta.lastModf ?? 0;
         }
 
         this.#generateId();
