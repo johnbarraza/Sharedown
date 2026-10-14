@@ -1,0 +1,24 @@
+{
+  "name": "sharedown-mcp",
+  "version": "1.0.0",
+  "description": "MCP server to list and download Sharepoint videos (Sharedown)",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "main": "server.mjs",
+  "bin": {
+    "sharedown-mcp": "server.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "install-chrome": "puppeteer browsers install chrome",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "puppeteer": "^25.14.0",
+    "zod": "^4.6.7"
+  }
+}
