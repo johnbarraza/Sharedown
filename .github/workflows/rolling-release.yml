@@ -7,8 +7,12 @@ on:
 
   workflow_dispatch:
 
+# GITHUB_TOKEN is used in forks without the GTOK secret, it needs to create the release
+permissions:
+  contents: write
+
 env:
-  SHD_VER: '5.3.6'
+  SHD_VER: '6.0.0'
   
 jobs:
   linux-build:
@@ -27,10 +31,10 @@ jobs:
 
     - name: build linux
       env:
-          GH_TOKEN: ${{ secrets.GTOK }}
+          GH_TOKEN: ${{ secrets.GTOK || secrets.GITHUB_TOKEN }}
       run: |
         npm i
-        npm run dist
+        npm run dist -- --publish never
 
     - name: upload release
       id: linux_rel_id
@@ -56,10 +60,10 @@ jobs:
 
     - name: build win
       env:
-          GH_TOKEN: ${{ secrets.GTOK }}
+          GH_TOKEN: ${{ secrets.GTOK || secrets.GITHUB_TOKEN }}
       run: |
         npm i
-        npm run dist
+        npm run dist -- --publish never
 
     - name: upload release
       id: win_rel_id
@@ -70,6 +74,7 @@ jobs:
         retention-days: 1
 
   mac-build:
+    if: false
     runs-on: macos-latest
 
     outputs:
@@ -85,10 +90,10 @@ jobs:
 
     - name: build macos
       env:
-          GH_TOKEN: ${{ secrets.GTOK }}
+          GH_TOKEN: ${{ secrets.GTOK || secrets.GITHUB_TOKEN }}
       run: |
         npm i
-        npm run dist
+        npm run dist -- --publish never
 
     - name: upload release
       id: mac_rel_id
@@ -102,7 +107,7 @@ jobs:
 
   publish_release:
     runs-on: ubuntu-latest
-    needs: [win-build, linux-build, mac-build]
+    needs: [win-build, linux-build]
 
     steps:
       - uses: actions/checkout@main
@@ -110,26 +115,30 @@ jobs:
       - name: get release artifacts
         uses: actions/download-artifact@main
         with:
-          artifact-ids: ${{needs.win-build.outputs.win_rel_id}},${{needs.linux-build.outputs.linux_rel_id}},${{needs.mac-build.outputs.mac_rel_id}}
+          artifact-ids: ${{needs.win-build.outputs.win_rel_id}},${{needs.linux-build.outputs.linux_rel_id}}
 
       - name: remove old release
         env:
-          GH_TOKEN: ${{ secrets.GTOK }}
+          GH_TOKEN: ${{ secrets.GTOK || secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release delete rolling -y
+        run: gh release delete $(gh release view -R "${{ github.server_url }}/${{ github.repository }}" --json tagName -q .tagName) --cleanup-tag -y
         continue-on-error: true
+
+      - name: prepare release notes
+        run: >
+          echo -e "continuous builds\n\n
+          **macOS release cannot be built due to unknwon error, apple users must run sharedown from source (npm start, see README), until builder, or github runner, is fixed!**\n\n
+          [**Changelog**](https://github.com/kylon/Sharedown/blob/main/CHANGELOG.md)" > rel_notes.md
 
       - name: publish release
         env:
-          GH_TOKEN: ${{ secrets.GTOK }}
+          GH_TOKEN: ${{ secrets.GTOK || secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: >
-          gh release create rolling
+          gh release create $(date '+%Y%m%d%H%M%S')
           "sharedown-linux/sharedown-${{env.SHD_VER}}.AppImage"
           "sharedown-win/sharedown-${{env.SHD_VER}}-win.7z"
-          "sharedown-mac/sharedown-${{env.SHD_VER}}-mac.7z"
-          "sharedown-mac/sharedown-${{env.SHD_VER}}-arm64-mac.7z"
           --draft=false
           --latest
-          -t "Sharedown rolling builds"
-          -n "continuous builds"
+          -t "Sharedown rolling build"
+          -F rel_notes.md

@@ -1,7 +1,8 @@
-![](sharedownlogo.png)
+![](sharedown/img/logo.png)
 
-> **Fork de [kylon/Sharedown](https://github.com/kylon/Sharedown)** con servidor MCP, descarga por lotes de carpetas,
-> fecha de cada clase y verificación de descargas. Ver [Novedades de este fork](#novedades-de-este-fork).
+> **Fork de [kylon/Sharedown](https://github.com/kylon/Sharedown)** (basado en Sharedown 6.0) con servidor MCP,
+> descarga por lotes de carpetas, fecha de cada clase y verificación de descargas.
+> Ver [Novedades de este fork](#novedades-de-este-fork).
 
 Sharedown is an Electron application to download Sharepoint videos, especially meant for students.
 
@@ -10,24 +11,15 @@ Sharedown is an Electron application to download Sharepoint videos, especially m
 ### Sharedown Wiki
 See [Sharedown Wiki](https://github.com/kylon/Sharedown/wiki) for more info or help!
 
-### FAQs
-> Q: I get a "Something went wrong..", or similar, error when Chrome/Chromium loads video previews.
->
-> A: This is not an error, this is expected and has no impact in Sharedown.
-
 ### Requirements
 * A recent version of FFmpeg
 * YT-dlp - [releases](https://github.com/yt-dlp/yt-dlp/releases)
 * Python 3
-* [Yarn](https://yarnpkg.com/)
-* A recent OS (Windows, Linux, or MacOS)
+* A recent OS (Windows, Linux, or macOS)
 
-### Features
-* Supports downloading with [FFmpeg](https://www.ffmpeg.org/) or [YT-dlp](https://github.com/yt-dlp/yt-dlp)
-* Per-video settings
-* Login modules to implement custom automatic login (see [Wiki](https://github.com/kylon/Sharedown/wiki))
-* Import every video of a folder, with class date and weekday shown in the download queue
-* MCP server to list and download videos from an AI assistant (see [mcp/README.md](mcp/README.md))
+### Releases
+* Este fork (con las novedades de abajo): [última compilación](https://github.com/johnbarraza/Sharedown/releases/latest)
+* Sharedown original: [latest build](https://github.com/kylon/Sharedown/releases/latest)
 
 ### Novedades de este fork
 
@@ -75,28 +67,16 @@ Instalación y configuración: [mcp/README.md](mcp/README.md).
 * Importar desde carpeta conserva la fecha y permite **ordenar por fecha de clase**.
 * Opción para **agregar la fecha de la clase al nombre del archivo**.
 * Opción para **mantener la sesión de Microsoft al cerrar Sharedown** (no volver a iniciar sesión en cada uso).
-* Dependencias actualizadas (Electron 44, Puppeteer 25).
-
-### Install
-* Download latest release from [here](https://github.com/kylon/Sharedown/releases/latest)
-* Place Sharedown app in your preferred location
-
-**ArchLinux**:
-
-The official AUR package [sharedown](https://aur.archlinux.org/packages/sharedown/) is available.
-
-
-Default output folder is your OS _**Downloads**_ folder, or, in Linux, if not found, your _**Home**_ folder.
 
 ### Build
 
 Run the following commands in a terminal to build Sharedown.
 
 ```
-$ git clone https://github.com/kylon/Sharedown.git
+$ git clone https://github.com/johnbarraza/Sharedown.git
 $ cd Sharedown
-$ yarn install
-$ yarn dist
+$ npm i
+$ npm run dist
 ```
 
 ### Run from source
@@ -104,7 +84,7 @@ $ yarn dist
 Run the following commands in a terminal to run Sharedown from source.
 
 ```
-$ git clone https://github.com/kylon/Sharedown.git
+$ git clone https://github.com/johnbarraza/Sharedown.git
 $ cd Sharedown
 $ npm i
 $ npm start
@@ -112,4 +92,4 @@ $ npm start
 
 ---
 
-![](sharedown.jpg)
+![](sharedown.png)

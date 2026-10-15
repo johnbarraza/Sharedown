@@ -1,6 +1,6 @@
 /**
  * This file is part of the Sharedown (https://github.com/kylon/Sharedown).
- * Copyright (c) 2021 Kylon.
+ * Copyright (c) 2026 Kylon.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,28 +16,17 @@
  */
 "use strict";
 
-class timeoutMessage {
-    #elm;
-    #tm;
+class video {
+    static #_id = 0;
+    id;
+    url;
+    meta;
 
-    constructor(elem) {
-        this.#elm = elem;
-    }
+    constructor(url, meta = null) {
+        this.id = video.#_id++;
+        this.url = url;
+        this.meta = {created: meta?.created ?? 0, lastModf: meta?.lastModf ?? 0};
 
-    reset() {
-        this.#elm.classList.add('d-none');
-        clearTimeout(this.#tm);
-    }
-
-    show() {
-        if (!this.#elm.classList.contains('d-none'))
-            return;
-
-        const $this = this;
-
-        this.#elm.classList.remove('d-none');
-        this.#tm = setTimeout(function () {
-            $this.reset();
-        }, 1000);
+        Object.freeze(this);
     }
 }

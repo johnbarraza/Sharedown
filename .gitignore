@@ -1,7 +1,5 @@
 .*
 node_modules
-package-lock.json
-yarn.lock
 dist
 
 # private notes and tests with real course links

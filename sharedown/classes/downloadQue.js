@@ -1,6 +1,6 @@
 /**
  * This file is part of the Sharedown (https://github.com/kylon/Sharedown).
- * Copyright (c) 2021 Kylon.
+ * Copyright (c) 2026 Kylon.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,20 +42,12 @@ class downloadQue {
         return this.#list.length > 0;
     }
 
-    getByID(id) {
-        for (const v of this.#list) {
-            if (v.id === id)
-                return v;
-        }
-
-        return null;
-    }
-
     remove(id) {
+        const idI = parseInt(id, 10);
         let i = 0;
 
         for (const v of this.#list) {
-            if (v.id === id)
+            if (v.id === idI)
                 break;
 
             ++i;
@@ -76,19 +68,20 @@ class downloadQue {
 
     importDownloadQue(videolist) {
         if (!Array.isArray(videolist))
-            return;
+            return false;
 
         try {
             for (const v of videolist) {
                 const vdata = JSON.parse(v);
 
-                if (vdata && vdata.hasOwnProperty('url') && vdata.hasOwnProperty('settings'))
-                    this.#list.push(new video(vdata.url, vdata.settings, vdata.meta ?? null));
+                if (vdata?.hasOwnProperty('url'))
+                    this.#list.push(new video(vdata.url, vdata.meta ?? null));
             }
+        } catch (e) {
+            //todo log
+            return false;
+        }
 
-            return true;
-        } catch (e) {}
-
-        return false;
+        return true;
     }
 }

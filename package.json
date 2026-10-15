@@ -4,8 +4,9 @@
   "repository": "https://github.com/kylon/Sharedown",
   "homepage": "https://github.com/kylon/Sharedown",
   "license": "GPL-3.0-or-later",
-  "version": "5.3.6",
-  "description": "Electron application to save your Sharepoint videos for offline usage (especially meant for students)",
+  "version": "6.0.0",
+  "description": "Electron app to save your Sharepoint videos for offline usage (for students)",
+  "desktopName": "com.electron.sharedown",
   "main": "app.js",
   "scripts": {
     "start": "electron .",
@@ -17,42 +18,47 @@
     "appId": "com.electron.sharedown",
     "copyright": "Copyright © kylon",
     "beforePack": "buildHooks/beforePack.js",
-    "afterAllArtifactBuild": "buildHooks/afterAllArtifactBuild.js",
-    "files": ["**/*", "!mcp${/*}"],
+    "files": ["**/*", "!mcp${/*}", "!.me${/*}"],
     "mac": {
       "category": "public.app-category.video",
       "target": {
         "target": "7z",
-        "arch": ["arm64", "x64"]
+        "arch": [
+          "arm64",
+          "x64"
+        ]
       }
     },
     "win": {
       "target": {
-          "target": "7z",
-          "arch": ["x64"]
-        }
+        "target": "7z",
+        "arch": [
+          "x64"
+        ]
+      }
     },
     "linux": {
       "category": "AudioVideo",
       "target": "AppImage"
     },
     "appImage": {
-      "license": "LICENSE"
+      "license": "LICENSE.txt"
     }
   },
   "keywords": [],
   "devDependencies": {
-    "electron": "^44.7.2",
-    "electron-builder": "^26.15.3"
+    "electron": "^44.0.0",
+    "electron-builder": "^27.0.0-alpha.7"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "7.3.1",
     "axios": "^1.20.0",
     "bootstrap": "5.3.8",
-    "clipboardy": "2.3.0",
-    "fessonia": "^2.2.2",
-    "iso8601-duration": "^2.2.0",
-    "keytar": "^7.9.0",
-    "puppeteer": "25.14.0"
+    "iso8601-duration": "^2.1.4",
+    "puppeteer": "25.9.0"
+  },
+  "allowScripts": {
+    "electron-winstaller@5.4.0": true,
+    "puppeteer@25.9.0": true
   }
 }
