@@ -9,6 +9,8 @@ const resolvedIntl = Intl.DateTimeFormat().resolvedOptions();
 
 export const LOCALE = process.env.SHAREDOWN_LOCALE || resolvedIntl.locale;
 export const TIME_ZONE = process.env.SHAREDOWN_TZ || resolvedIntl.timeZone;
+// File name / display date: dd mm aa (Peru) by default. Tokens: dd mm aa aaaa (or yy yyyy)
+export const DATE_FORMAT = process.env.SHAREDOWN_DATE_FORMAT || 'dd-mm-aa';
 export const VIDEO_EXTS = ['.mp4', '.m4v', '.mov', '.mkv', '.webm'];
 export const VIDEO_FORMATS = ['mp4', 'mkv'];
 export const AUDIO_FORMATS = ['mp3', 'm4a', 'opus', 'wav', 'flac'];
@@ -68,6 +70,33 @@ export function getClassDate(fileName, created = null) {
     return null;
 }
 
+/**
+ * YYYY-MM-DD -> DATE_FORMAT (or fmt).
+ */
+export function formatDate(isoDate, fmt = DATE_FORMAT) {
+    if (!isoDate)
+        return '';
+
+    const [y, m, d] = isoDate.split('-');
+
+    return fmt.replace(/aaaa|yyyy/gi, y).replace(/aa|yy/gi, y.slice(2)).replace(/dd/gi, d).replace(/mm/gi, m);
+}
+
+/**
+ * User date (dd/mm/aa, dd-mm-aaaa or YYYY-MM-DD) -> YYYY-MM-DD.
+ */
+export function parseDate(text) {
+    if (!text || /^\d{4}-\d{2}-\d{2}$/.test(text))
+        return text;
+
+    const m = text.match(/^(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{2}|\d{4})$/);
+
+    if (m === null)
+        throw new Error(`Invalid date ${text}, use dd/mm/aa`);
+
+    return `${m[3].length === 2 ? '20' + m[3] : m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+}
+
 function _datePart(date, opts) {
     return new Intl.DateTimeFormat('en-CA', {timeZone: TIME_ZONE, ...opts}).format(date);
 }
@@ -97,6 +126,7 @@ export function describeVideo({name, serverRelPath, origin, created = null, modi
         const d = describeDate(classDate.date);
 
         ret.class_date = d.date;
+        ret.display_date = formatDate(d.date, DATE_FORMAT.replaceAll('-', '/')); // show this date to the user
         ret.weekday = d.weekday;
         ret.start_time = d.time;
         ret.date_source = classDate.source;
@@ -133,13 +163,13 @@ export function sanitizeFileName(name) {
 }
 
 /**
- * Placeholders: {date} {weekday} {time} {name} {index}
+ * Placeholders: {date} (DATE_FORMAT) {weekday} {time} {name} {index}
  */
-export function applyNameTemplate(template, info, index, ext = 'mp4') {
+export function applyNameTemplate(template, info, index, ext = 'mp4', dateFormat = DATE_FORMAT) {
     const noDate = info.class_date === null;
     const name = path.parse(info.name).name;
     let out = template
-        .replaceAll('{date}', noDate ? '' : info.class_date)
+        .replaceAll('{date}', noDate ? '' : formatDate(info.class_date, dateFormat))
         .replaceAll('{weekday}', noDate ? '' : info.weekday)
         .replaceAll('{time}', noDate ? '' : info.start_time.replace(':', 'h'))
         .replaceAll('{index}', String(index).padStart(2, '0'))

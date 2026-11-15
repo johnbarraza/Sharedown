@@ -44,7 +44,8 @@ export function findDownloaded(dir, info, format, nameTemplate, history = loadHi
         recorded,
         applyNameTemplate(nameTemplate, info, 0, format),
         applyNameTemplate('{name}', info, 0, format),
-        applyNameTemplate('{date} {weekday} - {name}', info, 0, format)
+        applyNameTemplate('{date} {weekday} - {name}', info, 0, format),
+        applyNameTemplate('{date} {weekday} - {name}', info, 0, format, 'aaaa-mm-dd') // before SHAREDOWN_DATE_FORMAT
     ];
 
     for (const c of candidates) {

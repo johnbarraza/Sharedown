@@ -10,7 +10,7 @@ import { z } from 'zod';
 import './lib/env.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
-import { AUDIO_FORMATS, describeVideo, FORMATS, getServerRelativePath, getVideoKey, sortVideos, VIDEO_EXTS } from './lib/meta.mjs';
+import { AUDIO_FORMATS, DATE_FORMAT, describeVideo, FORMATS, getServerRelativePath, getVideoKey, sortVideos, VIDEO_EXTS } from './lib/meta.mjs';
 import { getRemoteFileInfo, listFolderVideos, login, log, PROFILE_DIR, shutdown } from './lib/sharepoint.mjs';
 import { cancelJob, DEFAULT_OUTPUT_DIR, getJob, getJobs, startConvertJob, startDownloadJob, stopAll, summarizeJob } from './lib/downloader.mjs';
 import { findDownloaded, loadHistory } from './lib/history.mjs';
@@ -125,6 +125,7 @@ server.registerTool('check_requirements', {
         settings: {
             default_output_dir: DEFAULT_OUTPUT_DIR,
             name_template: DEFAULT_TEMPLATE,
+            date_format: DATE_FORMAT,
             formats: FORMATS,
             login_profile: PROFILE_DIR
         }
@@ -194,7 +195,7 @@ server.registerTool('download_videos', {
         to_date: z.string().regex(dateRx).optional().describe('Only classes on or before this date (YYYY-MM-DD)'),
         output_dir: z.string().optional().describe(`Output folder (default: ${DEFAULT_OUTPUT_DIR})`),
         name_template: z.string().default(DEFAULT_TEMPLATE)
-            .describe('Output file name, placeholders: {date} (YYYY-MM-DD) {weekday} {time} {name} {index}. Extension .mp4 is added'),
+            .describe('Output file name, placeholders: {date} (SHAREDOWN_DATE_FORMAT, default dd-mm-aa) {weekday} {time} {name} {index}. Extension .mp4 is added'),
         format: formatEnum.default('mp4'),
         newest_first: z.boolean().default(false).describe('Download the most recent classes first (default: oldest first)'),
         skip_existing: z.boolean().default(true).describe('Skip videos whose output file already exists'),

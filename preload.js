@@ -136,6 +136,7 @@ contextBridge.exposeInMainWorld('sharedown', {
     ffmpegDownload: (videoData, video, outFile) => ipcRenderer.invoke('ffmpegDownload', videoData, video, outFile),
     ytdlpDownload: (videoData, video, outFile, settings) => ipcRenderer.invoke('ytdlpDownload', videoData, video, outFile, settings),
     stopDownload: () => ipcRenderer.send('stopDownload'),
+    setupMcp: (target, settings) => ipcRenderer.invoke('setupMcp', target, settings),
 
     onDownloadProgress: cb => ipcRenderer.on('downloadProg', (e, prog) => cb(prog)),
     onDetailedDownloadProgress: cb => ipcRenderer.on('detailedProg', (e, txt) => cb(txt)),

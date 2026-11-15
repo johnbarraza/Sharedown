@@ -151,7 +151,10 @@
                                 <input class="form-check-input" type="checkbox" id="dateinfname">
                                 <label class="form-check-label" for="dateinfname">Add class date to file name</label>
                             </div>
-                            <div class="form-text">Example: 2026-08-12 Wednesday - lectures-20260812_124031UTC-Meeting Recording.mp4</div>
+                            <div class="form-text">Example: 12-08-26 Wednesday - lectures-20260812_124031UTC-Meeting Recording.mp4</div>
+                            <label for="datefmt" class="form-label mt-2">Date format</label>
+                            <input id="datefmt" type="text" class="form-control" placeholder="dd-mm-aa" autocomplete="off">
+                            <div class="form-text">dd = day, mm = month, aa = year (26), aaaa = year (2026). Used in the queue, file names and the MCP server</div>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -278,6 +281,18 @@
                             <button id="delchdfold" type="button" class="btn bg-sharepoint1 float-end">Delete data folder</button>
                         </div>
                     </div>
+                </div>
+                <div class="modal-body pt-0">
+                    <hr>
+                    <label class="form-label">MCP server (Claude)</label>
+                    <p class="form-text">
+                        Lets Claude list and download your class recordings ("download the new classes of this folder").<br>
+                        It uses the output directory and date format above. Requires yt-dlp and FFmpeg.
+                    </p>
+                    <button type="button" class="btn btn-outline-dark btn-sm mcp-setup" data-target="desktop">Add to Claude Desktop</button>
+                    <button type="button" class="btn btn-outline-dark btn-sm mcp-setup" data-target="code">Add to Claude Code</button>
+                    <button type="button" class="btn btn-outline-dark btn-sm mcp-setup" data-target="copy">Copy JSON config</button>
+                    <div id="mcpres" class="form-text text-break mt-2"></div>
                 </div>
                 <div class="modal-footer mt-3">
                     <span id="gsett-succ-str" class="text-success d-none"><i class="fa-solid fa-check"></i> Saved</span>

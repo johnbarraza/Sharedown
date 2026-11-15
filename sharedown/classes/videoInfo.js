@@ -56,30 +56,38 @@ class videoInfo {
         return null;
     }
 
-    // mié, 12 ago 2026 07:40 · name.mp4 (month as text: 12/08 is ambiguous between dd/mm and mm/dd)
-    static getLabel(url, meta) {
+    // dd mm aa by default (Peru); tokens: dd mm aa aaaa (or yy yyyy)
+    static formatDate(date, fmt) {
+        const pad = n => n.toString().padStart(2, '0');
+        const y = date.getFullYear().toString();
+
+        return (fmt || 'dd-mm-aa').replace(/aaaa|yyyy/gi, y).replace(/aa|yy/gi, y.slice(2))
+            .replace(/dd/gi, pad(date.getDate())).replace(/mm/gi, pad(date.getMonth() + 1));
+    }
+
+    // mié 12/08/26 07:40 · name.mp4
+    static getLabel(url, meta, fmt) {
         const date = videoInfo.getDate(url, meta);
         const name = videoInfo.getFileName(url);
 
         if (date === null)
             return name;
 
-        const day = date.toLocaleDateString(undefined, {weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'});
+        const day = date.toLocaleDateString(undefined, {weekday: 'short'});
         const time = date.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
 
-        return `${day} ${time} · ${name}`;
+        return `${day} ${videoInfo.formatDate(date, (fmt || 'dd-mm-aa').replaceAll('-', '/'))} ${time} · ${name}`;
     }
 
-    // 2026-08-12 miércoles
-    static getDatePrefix(url, meta) {
+    // 12-08-26 miércoles
+    static getDatePrefix(url, meta, fmt) {
         const date = videoInfo.getDate(url, meta);
 
         if (date === null)
             return '';
 
-        const pad = n => n.toString().padStart(2, '0');
         const weekday = date.toLocaleDateString(undefined, {weekday: 'long'});
 
-        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${weekday}`;
+        return `${videoInfo.formatDate(date, fmt)} ${weekday}`;
     }
 }

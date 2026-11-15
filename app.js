@@ -1055,6 +1055,61 @@ function stopDownload() {
     }
 }
 
+// MCP server (mcp/server.mjs) run by Claude with this executable in node mode, packaged as an extra resource
+function getMcpServerConfig(settings) {
+    const server = app.isPackaged ? nodepath.join(process.resourcesPath, 'mcp', 'server.mjs') : nodepath.join(__dirname, 'mcp', 'server.mjs');
+    const chrome = settings.customChromePath || getChromePath();
+    const env = {ELECTRON_RUN_AS_NODE: '1', SHAREDOWN_DATE_FORMAT: settings.dateFormat || 'dd-mm-aa'};
+
+    if (settings.outputPath)
+        env.SHAREDOWN_OUTPUT_DIR = settings.outputPath;
+
+    if (chrome !== '' && nodefs.existsSync(chrome))
+        env.SHAREDOWN_CHROME_PATH = chrome;
+
+    return {command: process.execPath, args: [server], env};
+}
+
+function runClaudeCli(args) {
+    // ponytail: quoted for cmd/sh through the shell (claude may be a .cmd), paths with " or % are not supported
+    const cmd = ['claude', ...args.map(a => `"${a}"`)].join(' ');
+
+    return new Promise(res => nodechildproc.exec(cmd, {windowsHide: true}, (err, stdout, stderr) => res({err, out: `${stdout}${stderr}`.trim()})));
+}
+
+async function setupMcp(e, target, settings) {
+    const cfg = getMcpServerConfig(settings);
+
+    try {
+        if (target === 'copy') {
+            clipboard.writeText(JSON.stringify({mcpServers: {sharedown: cfg}}, null, 2));
+            return 'Copied to clipboard: paste it in your MCP client configuration.';
+
+        } else if (target === 'desktop') {
+            const file = nodepath.join(app.getPath('appData'), 'Claude', 'claude_desktop_config.json');
+            const data = nodefs.existsSync(file) ? JSON.parse(nodefs.readFileSync(file, 'utf8')) : {}; // invalid JSON throws: never overwrite it
+
+            data.mcpServers = {...data.mcpServers, sharedown: cfg};
+            nodefs.mkdirSync(nodepath.dirname(file), {recursive: true});
+            nodefs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
+            return `Added to ${file}. Restart Claude Desktop.`;
+        }
+
+        await runClaudeCli(['mcp', 'remove', 'sharedown', '--scope', 'user']); // replace an older configuration
+        const env = Object.entries(cfg.env).flatMap(([k, v]) => ['-e', `${k}=${v}`]);
+        const res = await runClaudeCli(['mcp', 'add', 'sharedown', '--scope', 'user', ...env, '--', cfg.command, ...cfg.args]);
+
+        if (res.err)
+            return `Claude Code CLI failed (is "claude" installed?): ${res.out || res.err.message}`;
+
+        return 'Added to Claude Code (user scope). Run /mcp in Claude Code to check it.';
+
+    } catch (err) {
+        writeLog(`setupMcp: ${err.message}`);
+        return `Error: ${err.message}`;
+    }
+}
+
 app.whenReady().then(() => {
     ipcMain.on('quit', () => app.quit());
     ipcMain.on('clipboard', (e, txt) => clipboard.writeText(txt));
@@ -1082,6 +1137,7 @@ app.whenReady().then(() => {
     ipcMain.handle('getUniqueOutFilePath', (e, outFolder, fileName) => getUniqueOutputFilePath(outFolder, fileName));
     ipcMain.handle('ffmpegDownload', ffmpegDownload);
     ipcMain.handle('ytdlpDownload', ytdlpDownload);
+    ipcMain.handle('setupMcp', setupMcp);
 
     mainWindow = createWindow();
     builtinChromePath = getChromePath();

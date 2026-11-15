@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 env:
-  SHD_VER: '6.0.0'
+  SHD_VER: '6.1.0'
   
 jobs:
   linux-build:
@@ -34,6 +34,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GTOK || secrets.GITHUB_TOKEN }}
       run: |
         npm i
+        npm ci --prefix mcp --ignore-scripts
         npm run dist -- --publish never
 
     - name: upload release
@@ -63,6 +64,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GTOK || secrets.GITHUB_TOKEN }}
       run: |
         npm i
+        npm ci --prefix mcp --ignore-scripts
         npm run dist -- --publish never
 
     - name: upload release
@@ -70,7 +72,9 @@ jobs:
       uses: actions/upload-artifact@main
       with:
         name: sharedown-win
-        path: dist/sharedown-${{env.SHD_VER}}-win.7z
+        path: |
+          dist/sharedown-${{env.SHD_VER}}-win.7z
+          dist/sharedown-${{env.SHD_VER}}-setup.exe
         retention-days: 1
 
   mac-build:
@@ -93,6 +97,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GTOK || secrets.GITHUB_TOKEN }}
       run: |
         npm i
+        npm ci --prefix mcp --ignore-scripts
         npm run dist -- --publish never
 
     - name: upload release
@@ -138,6 +143,7 @@ jobs:
           gh release create $(date '+%Y%m%d%H%M%S')
           "sharedown-linux/sharedown-${{env.SHD_VER}}.AppImage"
           "sharedown-win/sharedown-${{env.SHD_VER}}-win.7z"
+          "sharedown-win/sharedown-${{env.SHD_VER}}-setup.exe"
           --draft=false
           --latest
           -t "Sharedown rolling build"

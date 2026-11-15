@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 process.env.SHAREDOWN_TZ = 'America/Lima';
 process.env.SHAREDOWN_LOCALE = 'es-PE';
 
-const { applyNameTemplate, describeVideo, getServerRelativePath, getVideoKey, sortVideos } = await import('../lib/meta.mjs');
+const { applyNameTemplate, formatDate, parseDate, describeVideo, getServerRelativePath, getVideoKey, sortVideos } = await import('../lib/meta.mjs');
 
 const site = '/sites/Course-2026';
 const shareUrl = `https://contoso.sharepoint.com/:v:/r${site}/Documentos%20compartidos/General/Recordings/Solo%20vista/` +
@@ -40,8 +40,8 @@ test('name template', () => {
     const v = describeVideo({name: 'lectures-20260812_124031UTC-Meeting Recording.mp4', serverRelPath: filePath, origin: 'https://contoso.sharepoint.com'});
     const noDate = describeVideo({name: 'intro.mp4', serverRelPath: '/sites/a/intro.mp4', origin: 'https://x.sharepoint.com'});
 
-    assert.equal(applyNameTemplate('{date} {weekday} - {name}', v, 1), '2026-08-12 miércoles - lectures-20260812_124031UTC-Meeting Recording.mp4');
-    assert.equal(applyNameTemplate('{index} {date} {time}', v, 3), '03 2026-08-12 07h40.mp4');
+    assert.equal(applyNameTemplate('{date} {weekday} - {name}', v, 1), '12-08-26 miércoles - lectures-20260812_124031UTC-Meeting Recording.mp4');
+    assert.equal(applyNameTemplate('{index} {date} {time}', v, 3), '03 12-08-26 07h40.mp4');
     assert.equal(applyNameTemplate('{date} {weekday} - {name}', noDate, 1), 'intro.mp4');
 });
 
@@ -50,4 +50,14 @@ test('sort by class date', () => {
     const sorted = sortVideos([mk('b-20260815_120000UTC-x.mp4'), mk('a-20260812_120000UTC-x.mp4'), mk('nodate.mp4')], 'class_date');
 
     assert.deepEqual(sorted.map(v => v.name), ['a-20260812_120000UTC-x.mp4', 'b-20260815_120000UTC-x.mp4', 'nodate.mp4']);
+});
+
+test('date format dd-mm-aa and user dates', () => {
+    assert.equal(formatDate('2026-11-05'), '05-11-26');
+    assert.equal(formatDate('2026-11-05', 'aaaa-mm-dd'), '2026-11-05');
+    assert.equal(formatDate('2026-11-05', 'dd/mm/aaaa'), '05/11/2026');
+    assert.equal(parseDate('05/11/26'), '2026-11-05');
+    assert.equal(parseDate('5-11-2026'), '2026-11-05');
+    assert.equal(parseDate('2026-11-05'), '2026-11-05');
+    assert.throws(() => parseDate('noviembre'));
 });

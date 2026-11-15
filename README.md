@@ -51,15 +51,20 @@ node cli.mjs convert  <carpeta> --format mp3
 ```
 
 Características:
-* **Fecha de la clase**: se toma del nombre de las grabaciones de Teams (`...-20260812_124031UTC-...` → miércoles 2026-08-12 07:40, hora local)
-  o de la fecha de creación en SharePoint. Los archivos se guardan como `2026-08-12 miércoles - <nombre original>.mp4`.
+* **Fecha de la clase**: se toma del nombre de las grabaciones de Teams (`...-20260812_124031UTC-...` → miércoles 12/08/26 07:40, hora local)
+  o de la fecha de creación en SharePoint. Los archivos se guardan como `12-08-26 miércoles - <nombre original>.mp4`
+  (formato dd-mm-aa; se cambia con `SHAREDOWN_DATE_FORMAT`, por ejemplo `aaaa-mm-dd`). `--from`/`--to` aceptan `dd/mm/aa`.
 * **No vuelve a descargar**: cada carpeta de salida guarda un historial; volver a correr la descarga solo baja las clases nuevas
   o las que fallaron. Ctrl+C pausa o detiene sin perder lo terminado.
 * **Descargas confiables**: reintentos con espera cuando SharePoint limita (HTTP 429), sin saltar fragmentos,
   y verificación automática de cada video al terminar.
 * Funciona con carpetas de solo lectura ("Solo vista"), igual que el descargador yt-dlp de Sharedown.
 
-Instalación y configuración: [mcp/README.md](mcp/README.md).
+**Instalador .exe con el MCP incluido**: baja `sharedown-<versión>-setup.exe` de [Releases](https://github.com/johnbarraza/Sharedown/releases/latest),
+instálalo y en *Settings → MCP server (Claude)* pulsa **Add to Claude Desktop**, **Add to Claude Code** o **Copy JSON config**.
+El MCP usa la carpeta de salida y el formato de fecha de esa misma ventana, y el Chrome incluido en la app (no hace falta Node).
+
+Instalación manual y configuración: [mcp/README.md](mcp/README.md).
 
 #### Mejoras en la aplicación
 * La cola muestra **fecha, día y nombre real** de cada video (antes solo el inicio de la URL, igual para todos).

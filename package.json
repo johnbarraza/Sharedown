@@ -4,7 +4,7 @@
   "repository": "https://github.com/kylon/Sharedown",
   "homepage": "https://github.com/kylon/Sharedown",
   "license": "GPL-3.0-or-later",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "description": "Electron app to save your Sharepoint videos for offline usage (for students)",
   "desktopName": "com.electron.sharedown",
   "main": "app.js",
@@ -19,6 +19,10 @@
     "copyright": "Copyright © kylon",
     "beforePack": "buildHooks/beforePack.js",
     "files": ["**/*", "!mcp${/*}", "!.me${/*}"],
+    "extraResources": [
+      {"from": "mcp", "to": "mcp", "filter": ["**/*", "!test${/*}"]},
+      {"from": "mcp/node_modules", "to": "mcp/node_modules"}
+    ],
     "mac": {
       "category": "public.app-category.video",
       "target": {
@@ -30,12 +34,13 @@
       }
     },
     "win": {
-      "target": {
-        "target": "7z",
-        "arch": [
-          "x64"
-        ]
-      }
+      "target": [
+        {"target": "nsis", "arch": ["x64"]},
+        {"target": "7z", "arch": ["x64"]}
+      ]
+    },
+    "nsis": {
+      "artifactName": "sharedown-${version}-setup.${ext}"
     },
     "linux": {
       "category": "AudioVideo",

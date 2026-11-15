@@ -31,6 +31,7 @@ const globalSettings = {
     customChromePath: '',
     keepBrowserOpen: false,
     dateInFileName: false,
+    dateFormat: 'dd-mm-aa',
     keepUserdataFold: false
 };
 let objCache = {};
@@ -254,7 +255,7 @@ function addVideoToUI(vid) {
     const children = objCache.downQueElm.children;
     let firstComplete = null;
 
-    span.textContent = videoInfo.getLabel(vid.url, vid.meta);
+    span.textContent = videoInfo.getLabel(vid.url, vid.meta, globalSettings.dateFormat);
     span.setAttribute('title', videoInfo.getPath(vid.url));
     copyURLBtn.setAttribute('data-vurl', vid.url);
     progBar.addEventListener('click', e => toggleDownloadStats(e.currentTarget.querySelector('span')));
@@ -365,6 +366,7 @@ function loadGlobalSettings() {
     objCache.settingsModal.querySelector('#cuschromep').value = globalSettings.customChromePath;
     objCache.settingsModal.querySelector('#keepbrowopen').checked = globalSettings.keepBrowserOpen;
     objCache.settingsModal.querySelector('#dateinfname').checked = globalSettings.dateInFileName;
+    objCache.settingsModal.querySelector('#datefmt').value = globalSettings.dateFormat;
     objCache.settingsModal.querySelector('#keepuserdata').checked = globalSettings.keepUserdataFold;
 
     toggleDownloaderSettingsUI(globalSettings.downloader);
@@ -385,6 +387,7 @@ async function saveGlobalSettings() {
     globalSettings.customChromePath = objCache.settingsModal.querySelector('#cuschromep').value;
     globalSettings.keepBrowserOpen = objCache.settingsModal.querySelector('#keepbrowopen').checked;
     globalSettings.dateInFileName = objCache.settingsModal.querySelector('#dateinfname').checked;
+    globalSettings.dateFormat = objCache.settingsModal.querySelector('#datefmt').value.trim() || 'dd-mm-aa';
     globalSettings.keepUserdataFold = objCache.settingsModal.querySelector('#keepuserdata').checked;
 
     if (globalSettings.logging)
@@ -421,6 +424,7 @@ async function importAppSettings() {
     globalSettings.customChromePath = data.customChromePath ?? '';
     globalSettings.keepBrowserOpen = data.keepBrowserOpen ?? false;
     globalSettings.dateInFileName = data.dateInFileName ?? false;
+    globalSettings.dateFormat = data.dateFormat || 'dd-mm-aa';
     globalSettings.keepUserdataFold = data.keepUserdataFold ?? false;
 
     if (data['version'] < globalSettings['version'])
@@ -485,7 +489,7 @@ async function downloadVideo(videoElem) {
         }
 
         if (curSettings.dateInFileName) {
-            const datePrefix = videoInfo.getDatePrefix(objCache.downloading.url, objCache.downloading.meta);
+            const datePrefix = videoInfo.getDatePrefix(objCache.downloading.url, objCache.downloading.meta, curSettings.dateFormat);
 
             if (datePrefix !== '')
                 vdata.t = `${datePrefix} - ${vdata.t}`;
@@ -632,6 +636,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     objCache.downlStartBtn.addEventListener('click', () => startDownload());
     objCache.downlStopBtn.addEventListener('click', () => stopDownload());
     objCache.settingsModal.querySelector('#gsett-save').addEventListener('click', () => saveGlobalSettings());
+    objCache.settingsModal.querySelectorAll('.mcp-setup').forEach(btn => btn.addEventListener('click', async e => {
+        await saveGlobalSettings(); // the MCP server uses the output directory and date format shown in this window
+        objCache.settingsModal.querySelector('#mcpres').textContent =
+            await electron.setupMcp(e.currentTarget.getAttribute('data-target'), globalSettings);
+    }));
     objCache.settingsModal.querySelector('#boutdir').addEventListener('click', e => selectOutputFolderDialog(e.currentTarget));
     objCache.settingsModal.querySelector('#ytdlptmpdir').addEventListener('click', e => selectOutputFolderDialog(e.currentTarget));
     objCache.settingsModal.querySelector('#cuschromepb').addEventListener('click', e => selectCustomBrowserDialog(e.currentTarget));

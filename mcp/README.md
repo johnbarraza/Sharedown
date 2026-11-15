@@ -54,7 +54,7 @@ Class date: Teams recordings contain the meeting start time in the file name (`l
 is Wednesday 2026-08-12 07:40 in Lima). For other videos the Sharepoint creation time is used.
 
 Output file names use `name_template`, default `{date} {weekday} - {name}` →
-`2026-08-12 miércoles - lectures-20260812_124031UTC-Meeting Recording.mp4`.
+`12-08-26 miércoles - lectures-20260812_124031UTC-Meeting Recording.mp4` (date format: `SHAREDOWN_DATE_FORMAT`).
 Placeholders: `{date}` `{weekday}` `{time}` `{name}` `{index}`.
 
 Example prompts:
@@ -83,6 +83,7 @@ Videos are downloaded oldest class first (`--newest-first` for the opposite). `d
 | --- | --- |
 | `SHAREDOWN_OUTPUT_DIR` | `~/Downloads/sharedownVideos` |
 | `SHAREDOWN_NAME_TEMPLATE` | `{date} {weekday} - {name}` |
+| `SHAREDOWN_DATE_FORMAT` | `dd-mm-aa` (tokens `dd` `mm` `aa` `aaaa`, e.g. `aaaa-mm-dd`); used for `{date}` and shown dates |
 | `SHAREDOWN_TZ` | system time zone |
 | `SHAREDOWN_LOCALE` | system locale (weekday language) |
 | `SHAREDOWN_MCP_HEADLESS` | `1`; set `0` to always show the browser |

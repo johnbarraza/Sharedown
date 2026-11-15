@@ -6,13 +6,13 @@
  *
  *   node cli.mjs login    <sharepoint url>
  *   node cli.mjs list     <folder url>
- *   node cli.mjs download <folder or video url>... [--format mp4] [--out <dir>] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--newest-first] [--force]
+ *   node cli.mjs download <folder or video url>... [--format mp4] [--out <dir>] [--from dd/mm/aa] [--to dd/mm/aa] [--newest-first] [--force]
  *   node cli.mjs convert  <file or folder>... --format mp3 [--out <dir>]
  *   node cli.mjs verify   <file or folder>...
  */
 import './lib/env.mjs';
 import path from 'node:path';
-import { describeVideo, FORMATS, getServerRelativePath, getVideoKey, sortVideos } from './lib/meta.mjs';
+import { DATE_FORMAT, describeVideo, formatDate, FORMATS, parseDate, getServerRelativePath, getVideoKey, sortVideos } from './lib/meta.mjs';
 import { getRemoteFileInfo, listFolderVideos, login, NotLoggedInError, shutdown } from './lib/sharepoint.mjs';
 import { cancelJob, DEFAULT_OUTPUT_DIR, getJob, startConvertJob, startDownloadJob, stopAll } from './lib/downloader.mjs';
 import { formatMissing, missingFor } from './lib/requirements.mjs';
@@ -41,11 +41,17 @@ function parseArgs(argv) {
             opts.positional.push(a);
     }
 
+    opts.from = parseDate(opts.from);
+    opts.to = parseDate(opts.to);
+
     if (!FORMATS.includes(opts.format))
         throw new Error(`Unknown format ${opts.format}, use one of: ${FORMATS.join(', ')}`);
 
     return opts;
 }
+
+// screen date: file name format with / (dd/mm/aa)
+const showDate = d => formatDate(d, DATE_FORMAT.replaceAll('-', '/'));
 
 function isFolderUrl(url) {
     return /\/:f:\//.test(url) || /AllItems\.aspx/i.test(url) || !/\.(mp4|m4v|mov|mkv|webm)(\?|$)/i.test(decodeURIComponent(url.split('?')[0]));
@@ -71,7 +77,7 @@ async function follow(job) {
         for (const item of j.items) {
             if (MARK[item.status] && !printed.has(item.index)) {
                 printed.add(item.index);
-                line(`${MARK[item.status]} [${item.index}/${total}] ${item.info.class_date ?? ''} ${item.info.weekday ?? ''} ${item.name}` +
+                line(`${MARK[item.status]} [${item.index}/${total}] ${showDate(item.info.class_date)} ${item.info.weekday ?? ''} ${item.name}` +
                      ` - ${item.status}${item.progress && item.status !== 'done' ? ` (${item.progress})` : ''}${item.error ? `: ${item.error}` : ''}`);
                 process.stdout.write('\n');
 
@@ -85,7 +91,7 @@ async function follow(job) {
         if (current !== null) {
             const mins = Math.floor((Date.now() - started) / 60000);
 
-            line(`… [${current.index}/${total}] ${current.info.class_date ?? ''} ${current.name} - ` +
+            line(`… [${current.index}/${total}] ${showDate(current.info.class_date)} ${current.name} - ` +
                  `${current.status === 'resolving' ? 'getting video stream' : current.status} ${current.progress ?? ''}` +
                  `  | ${doneCount}/${total} finished, ${mins} min`);
         }
@@ -215,7 +221,7 @@ async function cmdList(opts) {
     const videos = sortVideos(await listFolderVideos(opts.positional[0], false), 'class_date');
 
     for (const [i, v] of videos.entries())
-        console.log(`${String(i + 1).padStart(3)}  ${v.class_date ?? '----------'} ${(v.weekday ?? '').padEnd(10)} ${v.start_time ?? '     '}  ${String(v.size_mb).padStart(7)} MB  ${v.name}`);
+        console.log(`${String(i + 1).padStart(3)}  ${(showDate(v.class_date) || '--').padEnd(10)} ${(v.weekday ?? '').padEnd(10)} ${v.start_time ?? '     '}  ${String(v.size_mb).padStart(7)} MB  ${v.name}`);
 
     console.log(`\n${videos.length} videos, ${Math.round(videos.reduce((t, v) => t + (v.size_mb ?? 0), 0))} MB`);
     return 0;
