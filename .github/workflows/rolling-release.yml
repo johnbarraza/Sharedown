@@ -3,7 +3,7 @@ name: rolling-release
 on:
   push:
     branches: ["main"]
-    paths: ['**.js', '**.json']
+    paths: ['**.js', '**.mjs', '**.cjs', '**.json', '**.html', '**.css', '.github/workflows/**']
 
   workflow_dispatch:
 
@@ -15,19 +15,36 @@ env:
   SHD_VER: '6.1.0'
   
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: setup node
+      uses: actions/setup-node@v7
+      with:
+        node-version: 'lts/*'
+
+    - name: mcp tests
+      run: |
+        npm ci --prefix mcp --ignore-scripts
+        npm test --prefix mcp
+
   linux-build:
     runs-on: ubuntu-latest
+    needs: test
 
     outputs:
       linux_rel_id: ${{steps.linux_rel_id.outputs.artifact-id}}
       
     steps:
-    - uses: actions/checkout@main
+    - uses: actions/checkout@v7
     
     - name: setup node
-      uses: actions/setup-node@main
+      uses: actions/setup-node@v7
       with:
-        node-version: 'latest'
+        node-version: 'lts/*'
 
     - name: build linux
       env:
@@ -39,7 +56,7 @@ jobs:
 
     - name: upload release
       id: linux_rel_id
-      uses: actions/upload-artifact@main
+      uses: actions/upload-artifact@v7
       with:
         name: sharedown-linux
         path: dist/sharedown-${{env.SHD_VER}}.AppImage
@@ -47,17 +64,18 @@ jobs:
 
   win-build:
     runs-on: windows-latest
+    needs: test
 
     outputs:
       win_rel_id: ${{steps.win_rel_id.outputs.artifact-id}}
       
     steps:
-    - uses: actions/checkout@main
+    - uses: actions/checkout@v7
     
     - name: setup node
-      uses: actions/setup-node@main
+      uses: actions/setup-node@v7
       with:
-        node-version: 'latest'
+        node-version: 'lts/*'
 
     - name: build win
       env:
@@ -69,7 +87,7 @@ jobs:
 
     - name: upload release
       id: win_rel_id
-      uses: actions/upload-artifact@main
+      uses: actions/upload-artifact@v7
       with:
         name: sharedown-win
         path: |
@@ -85,12 +103,12 @@ jobs:
       mac_rel_id: ${{steps.mac_rel_id.outputs.artifact-id}}
       
     steps:
-    - uses: actions/checkout@main
+    - uses: actions/checkout@v7
     
     - name: setup node
-      uses: actions/setup-node@main
+      uses: actions/setup-node@v7
       with:
-        node-version: 'latest'
+        node-version: 'lts/*'
 
     - name: build macos
       env:
@@ -102,7 +120,7 @@ jobs:
 
     - name: upload release
       id: mac_rel_id
-      uses: actions/upload-artifact@main
+      uses: actions/upload-artifact@v7
       with:
         name: sharedown-mac
         path: |
@@ -115,25 +133,34 @@ jobs:
     needs: [win-build, linux-build]
 
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v7
 
       - name: get release artifacts
-        uses: actions/download-artifact@main
+        uses: actions/download-artifact@v8
         with:
           artifact-ids: ${{needs.win-build.outputs.win_rel_id}},${{needs.linux-build.outputs.linux_rel_id}}
 
-      - name: remove old release
+      - name: remove old rolling builds
         env:
           GH_TOKEN: ${{ secrets.GTOK || secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release delete $(gh release view -R "${{ github.server_url }}/${{ github.repository }}" --json tagName -q .tagName) --cleanup-tag -y
-        continue-on-error: true
+        run: >
+          gh release list --limit 100 --json tagName,name
+          -q '.[] | select(.name == "Sharedown rolling build") | .tagName'
+          | xargs -r -I{} gh release delete {} --cleanup-tag -y
 
       - name: prepare release notes
-        run: >
-          echo -e "continuous builds\n\n
-          **macOS release cannot be built due to unknwon error, apple users must run sharedown from source (npm start, see README), until builder, or github runner, is fixed!**\n\n
-          [**Changelog**](https://github.com/kylon/Sharedown/blob/main/CHANGELOG.md)" > rel_notes.md
+        run: |
+          cat > rel_notes.md <<'EOF'
+          Compilación automática de la rama main (fork con servidor MCP).
+
+          **Windows:** `sharedown-${{env.SHD_VER}}-setup.exe` (instalador) o `sharedown-${{env.SHD_VER}}-win.7z` (portable).
+          El MCP se configura en *Settings → MCP server (Claude)*.
+
+          **macOS:** sin compilación, usar desde el código (`npm start`).
+
+          [Novedades del fork](https://github.com/${{ github.repository }}#novedades-de-este-fork)
+          EOF
 
       - name: publish release
         env:
